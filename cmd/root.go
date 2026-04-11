@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/iamNoah1/whisperbatch/fileutil"
 	"github.com/iamNoah1/whisperbatch/transcriber"
+	"github.com/spf13/cobra"
 )
 
 // version is set at build time via -ldflags "-X github.com/iamNoah1/whisperbatch/cmd.version=<ver>".
@@ -27,7 +27,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:     "whisperbatch",
 	Version: version,
-	Short: "Batch transcribe audio files using OpenAI Whisper",
+	Short:   "Batch transcribe audio files using OpenAI Whisper",
 	Long: `whisperbatch transcribes a folder of audio files in parallel using the Whisper CLI.
 
 Audio formats supported: mp3, wav, m4a, flac, ogg, mp4, webm

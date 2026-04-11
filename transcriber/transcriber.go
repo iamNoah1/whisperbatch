@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/schollz/progressbar/v3"
 	"github.com/iamNoah1/whisperbatch/fileutil"
+	"github.com/schollz/progressbar/v3"
 )
 
 // Config holds the parameters for a batch transcription run.
