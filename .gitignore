@@ -1,0 +1,32 @@
+# Binaries
+whisperbatch
+whisperbatch.exe
+dist/
+
+# Go build artifacts
+*.o
+*.a
+*.so
+
+# Test artifacts
+*.test
+*.out
+coverage.html
+coverage.txt
+
+# Editor & OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# GoReleaser
+.goreleaser/

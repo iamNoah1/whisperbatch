@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(go vet:*)",
+      "Bash(go run:*)",
+      "Bash(/tmp/whisperbatch-test -i /nonexistent)",
+      "Bash(mkdir -p /tmp/wb-test)",
+      "Bash(/tmp/whisperbatch-test -i /tmp/wb-test)",
+      "Bash(xargs sed:*)",
+      "Bash(git -C /Users/noahispas/Desktop/workspace/gitrepo_private/whisperbatch status)",
+      "Bash(gh auth:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m 'feat: initial release:*)"
+    ]
+  }
+}

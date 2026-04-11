@@ -1,0 +1,8 @@
+dist/
+.git/
+.github/
+*.md
+.gitignore
+.goreleaser.yaml
+Makefile
+docs/
