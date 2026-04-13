@@ -32,5 +32,5 @@ COPY --from=builder /app/whisperbatch /usr/local/bin/whisperbatch
 # Mount your audio files at /input and outputs will appear at /output.
 # Example:
 #   docker run --rm -v /host/audio:/input -v /host/out:/output \
-#     ghcr.io/iamNoah1/whisperbatch -i /input -o /output
+#     ghcr.io/iamnoah1/whisperbatch -i /input -o /output
 ENTRYPOINT ["whisperbatch"]

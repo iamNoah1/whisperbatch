@@ -82,13 +82,13 @@ curl -L https://github.com/iamNoah1/whisperbatch/releases/latest/download/whispe
 
 ```bash
 # Pull the image (includes Python, ffmpeg, and openai-whisper)
-docker pull ghcr.io/iamNoah1/whisperbatch:latest
+docker pull ghcr.io/iamnoah1/whisperbatch:latest
 
 # Transcribe a folder
 docker run --rm \
   -v /path/to/audio:/input:ro \
   -v /path/to/output:/output \
-  ghcr.io/iamNoah1/whisperbatch -i /input -o /output
+  ghcr.io/iamnoah1/whisperbatch -i /input -o /output
 ```
 
 ### Build from source

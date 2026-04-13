@@ -78,8 +78,8 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-      - "ghcr.io/iamNoah1/whisperbatch:{{ .Tag }}-amd64"
-      - "ghcr.io/iamNoah1/whisperbatch:latest"
+      - "ghcr.io/iamnoah1/whisperbatch:{{ .Tag }}-amd64"
+      - "ghcr.io/iamnoah1/whisperbatch:latest"
     dockerfile: Dockerfile.release
     build_flag_templates:
       - "--platform=linux/amd64"
@@ -93,17 +93,17 @@ dockers:
     goos: linux
     goarch: arm64
     image_templates:
-      - "ghcr.io/iamNoah1/whisperbatch:{{ .Tag }}-arm64"
+      - "ghcr.io/iamnoah1/whisperbatch:{{ .Tag }}-arm64"
     dockerfile: Dockerfile.release
     build_flag_templates:
       - "--platform=linux/arm64"
 
 docker_manifests:
-  - name_template: "ghcr.io/iamNoah1/whisperbatch:{{ .Tag }}"
+  - name_template: "ghcr.io/iamnoah1/whisperbatch:{{ .Tag }}"
     image_templates:
-      - "ghcr.io/iamNoah1/whisperbatch:{{ .Tag }}-amd64"
-      - "ghcr.io/iamNoah1/whisperbatch:{{ .Tag }}-arm64"
-  - name_template: "ghcr.io/iamNoah1/whisperbatch:latest"
+      - "ghcr.io/iamnoah1/whisperbatch:{{ .Tag }}-amd64"
+      - "ghcr.io/iamnoah1/whisperbatch:{{ .Tag }}-arm64"
+  - name_template: "ghcr.io/iamnoah1/whisperbatch:latest"
     image_templates:
-      - "ghcr.io/iamNoah1/whisperbatch:{{ .Tag }}-amd64"
-      - "ghcr.io/iamNoah1/whisperbatch:{{ .Tag }}-arm64"
+      - "ghcr.io/iamnoah1/whisperbatch:{{ .Tag }}-amd64"
+      - "ghcr.io/iamnoah1/whisperbatch:{{ .Tag }}-arm64"
