@@ -10,6 +10,10 @@ A fast, parallel CLI for batch-transcribing audio files with [OpenAI Whisper](ht
 Drop a folder of recordings in — get transcripts out. Automatically selects the best model for your hardware.
 
 ```
+ 47% [==============>               ]  ⠙ [2/5] meeting.mp3          1m23s  ~1m32s left
+```
+
+```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   WhisperBatch — Done
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -25,12 +29,12 @@ Drop a folder of recordings in — get transcripts out. Automatically selects th
 
 ## Features
 
-- **Parallel processing** — configurable worker pool, defaults to your CPU count
+- **Parallel processing** — configurable worker pool, defaults to 1 (each Whisper process already saturates all CPUs)
 - **Auto model selection** — queries `nvidia-smi` for VRAM, falls back to RAM
 - **Multiple output formats** — `txt`, `srt`, `vtt`, `json`, `tsv` in one pass
 - **Safe by default** — never overwrites existing transcripts unless `--overwrite`
 - **Graceful failures** — one bad file doesn't abort the batch
-- **Progress bar** — live feedback with per-file failure reporting
+- **Smooth progress bar** — continuously advancing fill with current file, `[N/total]` count, per-file elapsed time, and ETA
 
 ---
 
@@ -127,7 +131,7 @@ whisperbatch --version
 | `--input` | `-i` | string | **required** | Folder containing audio files |
 | `--output` | `-o` | string | same as input | Folder for output files |
 | `--format` | `-f` | `[]string` | `txt` | Output format — repeatable: `txt json srt vtt tsv` |
-| `--workers` | `-w` | int | CPU count | Parallel transcription workers |
+| `--workers` | `-w` | int | `1` | Parallel transcription workers |
 | `--model` | `-m` | string | auto | Whisper model override: `tiny base medium large` |
 | `--overwrite` | | bool | `false` | Overwrite existing output files |
 | `--version` | | | | Print version and exit |

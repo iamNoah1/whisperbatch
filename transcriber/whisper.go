@@ -27,6 +27,19 @@ func (e *TranscribeError) Error() string {
 
 func (e *TranscribeError) Unwrap() error { return e.Cause }
 
+// buildArgs constructs the argument slice for the whisper CLI invocation.
+func buildArgs(inputPath, outputDir, model string, formats []string) []string {
+	args := []string{
+		inputPath,
+		"--model", model,
+		"--output_dir", outputDir,
+	}
+	for _, f := range formats {
+		args = append(args, "--output_format", f)
+	}
+	return args
+}
+
 // Transcribe runs the whisper CLI on a single audio file, writing outputs to
 // outputDir in each of the requested formats.
 //
@@ -38,16 +51,7 @@ func Transcribe(inputPath, outputDir, model string, formats []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), whisperTimeout)
 	defer cancel()
 
-	args := []string{
-		inputPath,
-		"--model", model,
-		"--output_dir", outputDir,
-		"--language", "auto",
-		"--device", "auto",
-	}
-	for _, f := range formats {
-		args = append(args, "--output_format", f)
-	}
+	args := buildArgs(inputPath, outputDir, model, formats)
 
 	var stderr bytes.Buffer
 	cmd := exec.CommandContext(ctx, "whisper", args...)

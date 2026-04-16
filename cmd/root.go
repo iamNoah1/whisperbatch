@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/iamNoah1/whisperbatch/fileutil"
@@ -51,7 +50,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&inputDir, "input", "i", "", "Folder containing audio files (required)")
 	rootCmd.Flags().StringVarP(&outputDir, "output", "o", "", "Folder for output files (default: same as input)")
 	rootCmd.Flags().StringArrayVarP(&formats, "format", "f", []string{"txt"}, "Output formats: txt, json, srt, vtt, tsv (repeatable)")
-	rootCmd.Flags().IntVarP(&workers, "workers", "w", runtime.NumCPU(), "Number of parallel transcription workers")
+	rootCmd.Flags().IntVarP(&workers, "workers", "w", 1, "Number of parallel transcription workers (default 1; each whisper process already uses all CPUs)")
 	rootCmd.Flags().StringVarP(&model, "model", "m", "", "Override auto-selected Whisper model (tiny/base/medium/large)")
 	rootCmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing output files")
 

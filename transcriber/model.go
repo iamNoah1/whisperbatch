@@ -15,13 +15,12 @@ const mbPerGB = 1024
 // SelectModel picks the best Whisper model based on available VRAM or RAM,
 // logs the decision, and returns the model name string.
 func SelectModel() string {
-	name, reason := selectModel()
+	name, reason := selectModel(getAvailableRAMMB(), getAvailableVRAMMB())
 	log.Printf("model: %s (%s)", name, reason)
 	return name
 }
 
-func selectModel() (string, string) {
-	vramMB := getAvailableVRAMMB()
+func selectModel(ramMB, vramMB float64) (string, string) {
 	if vramMB > 0 {
 		switch {
 		case vramMB >= 10*mbPerGB:
@@ -35,7 +34,6 @@ func selectModel() (string, string) {
 		}
 	}
 
-	ramMB := getAvailableRAMMB()
 	switch {
 	case ramMB >= 16*mbPerGB:
 		return "large", fmt.Sprintf("RAM %.0f MB >= 16 GB", ramMB)
