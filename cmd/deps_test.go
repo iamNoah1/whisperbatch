@@ -82,3 +82,56 @@ func TestFallbackInstructions_content(t *testing.T) {
 		}
 	}
 }
+
+func TestInstallWhisperViaPip_pip3Success(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("pip3")
+	var got []string
+	osRunCmd = func(name string, args ...string) error {
+		got = append([]string{name}, args...)
+		return nil
+	}
+
+	if err := installWhisperViaPip(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"pip3", "install", "openai-whisper"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Errorf("want %v, got %v", want, got)
+	}
+}
+
+func TestInstallWhisperViaPip_python3Fallback(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("python3")
+	var got []string
+	osRunCmd = func(name string, args ...string) error {
+		got = append([]string{name}, args...)
+		return nil
+	}
+
+	if err := installWhisperViaPip(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"python3", "-m", "pip", "install", "openai-whisper"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Errorf("want %v, got %v", want, got)
+	}
+}
+
+func TestInstallWhisperViaPip_noPip(t *testing.T) {
+	orig := osLookPath
+	defer func() { osLookPath = orig }()
+	osLookPath = mockLookPath()
+
+	err := installWhisperViaPip()
+	if err == nil || !strings.Contains(err.Error(), "no pip found") {
+		t.Errorf("expected 'no pip found' error, got: %v", err)
+	}
+}

@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -58,4 +60,19 @@ func runCmdReal(name string, args ...string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin // needed for sudo password prompts on Linux
 	return cmd.Run()
+}
+
+// installWhisperViaPip installs openai-whisper using the first available pip.
+func installWhisperViaPip() error {
+	pip := findPip()
+	if pip == "" {
+		return fmt.Errorf("no pip found\n%s", fallbackInstructions())
+	}
+	log.Printf("whisper not found — installing openai-whisper via %s", pip)
+	parts := strings.Fields(pip)
+	args := append(parts[1:], "install", "openai-whisper")
+	if err := osRunCmd(parts[0], args...); err != nil {
+		return fmt.Errorf("could not install openai-whisper: %w\n%s", err, fallbackInstructions())
+	}
+	return nil
 }
