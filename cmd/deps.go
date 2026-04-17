@@ -96,3 +96,23 @@ func installDarwin(ffmpegMissing, whisperMissing bool) error {
 	}
 	return nil
 }
+
+func installLinux(ffmpegMissing, whisperMissing bool) error {
+	if ffmpegMissing {
+		aptCmd := "apt-get"
+		if !toolExists("apt-get") {
+			aptCmd = "apt"
+		}
+		if !toolExists(aptCmd) {
+			return fmt.Errorf("could not find apt-get or apt\n%s", fallbackInstructions())
+		}
+		log.Printf("ffmpeg not found — installing via %s", aptCmd)
+		if err := osRunCmd(aptCmd, "install", "-y", "ffmpeg"); err != nil {
+			return fmt.Errorf("could not install ffmpeg: %w\n%s", err, fallbackInstructions())
+		}
+	}
+	if whisperMissing {
+		return installWhisperViaPip()
+	}
+	return nil
+}

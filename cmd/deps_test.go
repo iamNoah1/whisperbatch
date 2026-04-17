@@ -201,3 +201,74 @@ func TestInstallDarwin_whisperOnly(t *testing.T) {
 		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
 	}
 }
+
+func TestInstallLinux_aptGet(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("apt-get", "pip3")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installLinux(true, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "apt-get install -y ffmpeg" {
+		t.Errorf("want [apt-get install -y ffmpeg], got %v", cmds)
+	}
+}
+
+func TestInstallLinux_aptFallback(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("apt", "pip3") // apt-get absent, apt present
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installLinux(true, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "apt install -y ffmpeg" {
+		t.Errorf("want [apt install -y ffmpeg], got %v", cmds)
+	}
+}
+
+func TestInstallLinux_noApt(t *testing.T) {
+	orig := osLookPath
+	defer func() { osLookPath = orig }()
+	osLookPath = mockLookPath()
+
+	err := installLinux(true, false)
+	if err == nil || !strings.Contains(err.Error(), "apt-get or apt") {
+		t.Errorf("expected apt-get/apt error, got: %v", err)
+	}
+}
+
+func TestInstallLinux_whisperOnly(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("pip3")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installLinux(false, true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "pip3 install openai-whisper" {
+		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
+	}
+}
