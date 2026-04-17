@@ -323,3 +323,37 @@ func TestInstallWindows_whisperOnly(t *testing.T) {
 		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
 	}
 }
+
+func TestEnsureDeps_allPresent_noInstall(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("ffmpeg", "whisper")
+	called := false
+	osRunCmd = func(name string, args ...string) error {
+		called = true
+		return nil
+	}
+
+	if err := ensureDeps(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if called {
+		t.Error("expected no install commands when all deps present")
+	}
+}
+
+func TestEnsureDeps_unknownOS_returnsError(t *testing.T) {
+	origLook := osLookPath
+	origGOOS := currentGOOS
+	defer func() { osLookPath = origLook; currentGOOS = origGOOS }()
+
+	osLookPath = mockLookPath() // nothing present
+	currentGOOS = "plan9"
+
+	err := ensureDeps()
+	if err == nil || !strings.Contains(err.Error(), "auto-install not supported") {
+		t.Errorf("expected unsupported OS error, got: %v", err)
+	}
+}

@@ -5,13 +5,15 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
 // osLookPath and osRunCmd are vars so tests can inject mocks.
 var (
-	osLookPath = exec.LookPath
-	osRunCmd   = runCmdReal
+	osLookPath  = exec.LookPath
+	osRunCmd    = runCmdReal
+	currentGOOS = runtime.GOOS
 )
 
 // toolExists reports whether the named executable is on PATH.
@@ -131,4 +133,24 @@ func installWindows(ffmpegMissing, whisperMissing bool) error {
 		return installWhisperViaPip()
 	}
 	return nil
+}
+
+func ensureDeps() error {
+	ffmpegMissing := !toolExists("ffmpeg")
+	whisperMissing := !toolExists("whisper")
+
+	if !ffmpegMissing && !whisperMissing {
+		return nil
+	}
+
+	switch currentGOOS {
+	case "darwin":
+		return installDarwin(ffmpegMissing, whisperMissing)
+	case "linux":
+		return installLinux(ffmpegMissing, whisperMissing)
+	case "windows":
+		return installWindows(ffmpegMissing, whisperMissing)
+	default:
+		return fmt.Errorf("auto-install not supported on %s\n%s", currentGOOS, fallbackInstructions())
+	}
 }
