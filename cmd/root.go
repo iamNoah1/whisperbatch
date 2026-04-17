@@ -36,6 +36,9 @@ Example:
   whisperbatch -i ./recordings
   whisperbatch -i ./recordings -o ./output -f txt -f srt -f json
   whisperbatch -i ./recordings -m large -w 8 --overwrite`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return ensureDeps()
+	},
 	RunE: run,
 }
 
