@@ -272,3 +272,54 @@ func TestInstallLinux_whisperOnly(t *testing.T) {
 		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
 	}
 }
+
+func TestInstallWindows_winget(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("winget", "pip3")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installWindows(true, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "winget install --id Gyan.FFmpeg -e" {
+		t.Errorf("want [winget install --id Gyan.FFmpeg -e], got %v", cmds)
+	}
+}
+
+func TestInstallWindows_noWinget(t *testing.T) {
+	orig := osLookPath
+	defer func() { osLookPath = orig }()
+	osLookPath = mockLookPath()
+
+	err := installWindows(true, false)
+	if err == nil || !strings.Contains(err.Error(), "winget not found") {
+		t.Errorf("expected winget error, got: %v", err)
+	}
+}
+
+func TestInstallWindows_whisperOnly(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("pip3")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installWindows(false, true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "pip3 install openai-whisper" {
+		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
+	}
+}

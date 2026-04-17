@@ -116,3 +116,19 @@ func installLinux(ffmpegMissing, whisperMissing bool) error {
 	}
 	return nil
 }
+
+func installWindows(ffmpegMissing, whisperMissing bool) error {
+	if ffmpegMissing {
+		if !toolExists("winget") {
+			return fmt.Errorf("winget not found\n%s", fallbackInstructions())
+		}
+		log.Printf("ffmpeg not found — installing via winget")
+		if err := osRunCmd("winget", "install", "--id", "Gyan.FFmpeg", "-e"); err != nil {
+			return fmt.Errorf("could not install ffmpeg: %w\n%s", err, fallbackInstructions())
+		}
+	}
+	if whisperMissing {
+		return installWhisperViaPip()
+	}
+	return nil
+}
