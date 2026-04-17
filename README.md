@@ -43,24 +43,12 @@ Drop a folder of recordings in — get transcripts out. Automatically selects th
 | Requirement | Notes |
 |-------------|-------|
 | Go 1.22+ | Only needed for `go install` / building from source |
-| Python 3.9+ | For the `whisper` CLI |
-| `whisper` on `$PATH` | See install instructions below |
-| `ffmpeg` on `$PATH` | Required by whisper for audio decoding |
+| Python 3.9+ | For the `whisper` CLI — installed automatically if missing |
+| `whisper` on `$PATH` | Installed automatically on first run |
+| `ffmpeg` on `$PATH` | Installed automatically on first run |
 
-Install Whisper and ffmpeg:
-
-```bash
-# macOS
-brew install ffmpeg
-pip install openai-whisper
-
-# Ubuntu / Debian
-sudo apt install ffmpeg
-pip install openai-whisper
-```
-
-> **faster-whisper users:** `pip install faster-whisper` works too and natively supports
-> multiple `--output_format` flags in a single run.
+`whisperbatch` installs missing dependencies automatically on first run using
+Homebrew (macOS), apt (Linux), or winget (Windows). No manual setup needed.
 
 ---
 
