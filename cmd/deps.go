@@ -76,3 +76,23 @@ func installWhisperViaPip() error {
 	}
 	return nil
 }
+
+func installDarwin(ffmpegMissing, whisperMissing bool) error {
+	if ffmpegMissing {
+		if !toolExists("brew") {
+			log.Printf("Homebrew not found — installing Homebrew")
+			const brewScript = `curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh | NONINTERACTIVE=1 /bin/bash`
+			if err := osRunCmd("/bin/sh", "-c", brewScript); err != nil {
+				return fmt.Errorf("could not install Homebrew: %w\nInstall manually: https://brew.sh\n%s", err, fallbackInstructions())
+			}
+		}
+		log.Printf("ffmpeg not found — installing via Homebrew")
+		if err := osRunCmd("brew", "install", "ffmpeg"); err != nil {
+			return fmt.Errorf("could not install ffmpeg: %w\n%s", err, fallbackInstructions())
+		}
+	}
+	if whisperMissing {
+		return installWhisperViaPip()
+	}
+	return nil
+}

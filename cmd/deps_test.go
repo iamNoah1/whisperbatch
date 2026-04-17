@@ -135,3 +135,69 @@ func TestInstallWhisperViaPip_noPip(t *testing.T) {
 		t.Errorf("expected 'no pip found' error, got: %v", err)
 	}
 }
+
+func TestInstallDarwin_brewPresent_ffmpegOnly(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("brew", "pip3") // brew present, ffmpeg absent
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installDarwin(true, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "brew install ffmpeg" {
+		t.Errorf("want [brew install ffmpeg], got %v", cmds)
+	}
+}
+
+func TestInstallDarwin_brewMissing_installsBrewThenFfmpeg(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("pip3") // no brew, no ffmpeg
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installDarwin(true, false); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) < 2 {
+		t.Fatalf("expected >=2 commands, got %v", cmds)
+	}
+	if !strings.Contains(cmds[0], "Homebrew") && !strings.Contains(cmds[0], "/bin/sh") {
+		t.Errorf("first command should be homebrew install script, got: %q", cmds[0])
+	}
+	if cmds[1] != "brew install ffmpeg" {
+		t.Errorf("second command should be brew install ffmpeg, got: %q", cmds[1])
+	}
+}
+
+func TestInstallDarwin_whisperOnly(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("pip3")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installDarwin(false, true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "pip3 install openai-whisper" {
+		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
+	}
+}
