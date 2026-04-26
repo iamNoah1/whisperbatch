@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 go build \
         -o whisperbatch .
 
 # ─── Stage 2: runtime with Python + Whisper + ffmpeg ──────────────────────────
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="whisperbatch" \
       org.opencontainers.image.description="Batch audio transcription via OpenAI Whisper" \
