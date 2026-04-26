@@ -23,9 +23,9 @@ func TestFindAudioFiles(t *testing.T) {
 	create("e.ogg")
 	create("f.mp4")
 	create("g.webm")
-	create("h.txt")  // not audio
-	create("i.pdf")  // not audio
-	create("j.MP3")  // uppercase — should still match
+	create("h.txt") // not audio
+	create("i.pdf") // not audio
+	create("j.MP3") // uppercase — should still match
 
 	files, err := FindAudioFiles(dir)
 	if err != nil {
