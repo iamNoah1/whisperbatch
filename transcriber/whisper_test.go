@@ -2,11 +2,14 @@ package transcriber
 
 import (
 	"encoding/binary"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
+	"time"
 )
 
 // TestBuildArgs verifies the exact flags passed to the whisper subprocess.
@@ -65,13 +68,64 @@ func TestTranscribeIntegration(t *testing.T) {
 		t.Fatalf("writing test WAV: %v", err)
 	}
 
-	if err := Transcribe(wavPath, dir, "tiny", []string{"txt"}); err != nil {
+	if err := Transcribe(wavPath, dir, "tiny", []string{"txt"}, time.Minute); err != nil {
 		t.Fatalf("Transcribe failed: %v", err)
 	}
 
 	outPath := filepath.Join(dir, "silence.txt")
 	if _, err := os.Stat(outPath); os.IsNotExist(err) {
 		t.Errorf("expected output file %s was not created", outPath)
+	}
+}
+
+func TestTranscribeError_withStderr(t *testing.T) {
+	e := &TranscribeError{File: "/audio/test.mp3", Stderr: "out of memory"}
+	got := e.Error()
+	if !strings.Contains(got, "test.mp3") || !strings.Contains(got, "out of memory") {
+		t.Errorf("unexpected error string: %q", got)
+	}
+}
+
+func TestTranscribeError_withoutStderr(t *testing.T) {
+	e := &TranscribeError{File: "/audio/test.mp3", Stderr: ""}
+	got := e.Error()
+	if !strings.Contains(got, "test.mp3") {
+		t.Errorf("unexpected error string: %q", got)
+	}
+	if strings.Contains(got, ":") && strings.HasSuffix(got, ":") {
+		t.Errorf("trailing colon in error string without stderr: %q", got)
+	}
+}
+
+func TestTranscribeError_Unwrap(t *testing.T) {
+	cause := errors.New("exit status 1")
+	e := &TranscribeError{Cause: cause}
+	if e.Unwrap() != cause {
+		t.Errorf("Unwrap() = %v, want %v", e.Unwrap(), cause)
+	}
+}
+
+func TestTranscribeError_timedOut(t *testing.T) {
+	e := &TranscribeError{
+		File:     "/audio/long.mp3",
+		TimedOut: true,
+		Timeout:  4 * time.Hour,
+		// Stderr deliberately set to a benign warning to prove the timeout
+		// message replaces it instead of being masked by it.
+		Stderr: "Warning: unauthenticated HF request",
+	}
+	got := e.Error()
+	if !strings.Contains(got, "timed out") {
+		t.Errorf("expected timeout message, got: %q", got)
+	}
+	if !strings.Contains(got, "4h0m0s") {
+		t.Errorf("expected timeout duration in message, got: %q", got)
+	}
+	if !strings.Contains(got, "long.mp3") {
+		t.Errorf("expected file name in message, got: %q", got)
+	}
+	if strings.Contains(got, "unauthenticated") {
+		t.Errorf("timeout message must not leak stderr warnings, got: %q", got)
 	}
 }
 

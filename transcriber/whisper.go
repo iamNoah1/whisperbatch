@@ -3,21 +3,31 @@ package transcriber
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 	"time"
 )
 
-const whisperTimeout = 30 * time.Minute
+// DefaultTimeout is the per-file timeout used when none is configured.
+const DefaultTimeout = 4 * time.Hour
 
 // TranscribeError holds structured details about a failed whisper invocation.
 type TranscribeError struct {
-	File   string
-	Stderr string
-	Cause  error
+	File     string
+	Stderr   string
+	Cause    error
+	TimedOut bool
+	Timeout  time.Duration
 }
 
 func (e *TranscribeError) Error() string {
+	if e.TimedOut {
+		return fmt.Sprintf(
+			"whisper timed out after %s for %q — increase --timeout for longer audio",
+			e.Timeout.Round(time.Second), e.File,
+		)
+	}
 	msg := fmt.Sprintf("whisper failed for %q", e.File)
 	if e.Stderr != "" {
 		msg += ": " + e.Stderr
@@ -43,10 +53,15 @@ func buildArgs(inputPath, outputDir, model string, formats []string) []string {
 // Transcribe runs the whisper-ctranslate2 (faster-whisper) CLI on a single audio
 // file, writing outputs to outputDir in each of the requested formats.
 //
-// It uses a 30-minute per-file timeout and captures stderr for error reporting.
-// Multiple --output_format flags produce multiple files in a single run.
-func Transcribe(inputPath, outputDir, model string, formats []string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), whisperTimeout)
+// timeout is the maximum wall-clock duration for the subprocess. When it
+// expires the process is killed and a TranscribeError with TimedOut=true is
+// returned so callers can distinguish a hang/long file from a real failure.
+// A non-positive timeout falls back to DefaultTimeout.
+func Transcribe(inputPath, outputDir, model string, formats []string, timeout time.Duration) error {
+	if timeout <= 0 {
+		timeout = DefaultTimeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	args := buildArgs(inputPath, outputDir, model, formats)
@@ -56,6 +71,14 @@ func Transcribe(inputPath, outputDir, model string, formats []string) error {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return &TranscribeError{
+				File:     inputPath,
+				Cause:    ctx.Err(),
+				TimedOut: true,
+				Timeout:  timeout,
+			}
+		}
 		stderrStr := bytes.TrimSpace(stderr.Bytes())
 		return &TranscribeError{
 			File:   inputPath,

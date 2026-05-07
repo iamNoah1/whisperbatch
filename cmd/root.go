@@ -21,6 +21,7 @@ var (
 	workers   int
 	model     string
 	overwrite bool
+	timeout   time.Duration
 )
 
 var rootCmd = &cobra.Command{
@@ -57,6 +58,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&workers, "workers", "w", 1, "Number of parallel transcription workers (default 1; each whisper-ctranslate2 process already uses all CPUs)")
 	rootCmd.Flags().StringVarP(&model, "model", "m", "", "Override auto-selected model (tiny/base/small/medium/large-v3)")
 	rootCmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing output files")
+	rootCmd.Flags().DurationVar(&timeout, "timeout", transcriber.DefaultTimeout, "Per-file timeout (e.g. 30m, 2h, 4h). Long calls on slower hardware may need more.")
 
 	if err := rootCmd.MarkFlagRequired("input"); err != nil {
 		log.Fatalf("failed to mark input flag as required: %v", err)
@@ -92,6 +94,7 @@ func run(_ *cobra.Command, _ []string) error {
 		Workers:   workers,
 		Model:     selectedModel,
 		Overwrite: overwrite,
+		Timeout:   timeout,
 	}
 
 	start := time.Now()

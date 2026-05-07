@@ -18,6 +18,9 @@ type Config struct {
 	Workers   int
 	Model     string
 	Overwrite bool
+	// Timeout is the per-file wall-clock timeout for the whisper subprocess.
+	// Zero or negative means use DefaultTimeout.
+	Timeout time.Duration
 }
 
 // Result captures the outcome of transcribing a single file.
@@ -222,7 +225,7 @@ func processFile(inputPath string, cfg Config) Result {
 		return Result{File: inputPath, Elapsed: time.Since(start)}
 	}
 
-	err := Transcribe(inputPath, cfg.OutputDir, cfg.Model, cfg.Formats)
+	err := Transcribe(inputPath, cfg.OutputDir, cfg.Model, cfg.Formats, cfg.Timeout)
 	return Result{
 		File:    inputPath,
 		Elapsed: time.Since(start),
