@@ -13,6 +13,7 @@ var audioExtensions = map[string]bool{
 	".m4a":  true,
 	".flac": true,
 	".ogg":  true,
+	".opus": true,
 	".mp4":  true,
 	".webm": true,
 }

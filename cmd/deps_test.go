@@ -76,7 +76,7 @@ func TestFindPip_none(t *testing.T) {
 
 func TestFallbackInstructions_content(t *testing.T) {
 	s := fallbackInstructions()
-	for _, want := range []string{"ffmpeg", "openai-whisper", "brew", "apt-get", "winget", "pip3"} {
+	for _, want := range []string{"ffmpeg", "whisper-ctranslate2", "brew", "apt-get", "winget", "pip3"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("fallbackInstructions missing %q", want)
 		}
@@ -98,7 +98,7 @@ func TestInstallWhisperViaPip_pip3Success(t *testing.T) {
 	if err := installWhisperViaPip(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := []string{"pip3", "install", "openai-whisper"}
+	want := []string{"pip3", "install", "whisper-ctranslate2"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Errorf("want %v, got %v", want, got)
 	}
@@ -119,7 +119,7 @@ func TestInstallWhisperViaPip_python3Fallback(t *testing.T) {
 	if err := installWhisperViaPip(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := []string{"python3", "-m", "pip", "install", "openai-whisper"}
+	want := []string{"python3", "-m", "pip", "install", "whisper-ctranslate2"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Errorf("want %v, got %v", want, got)
 	}
@@ -197,8 +197,8 @@ func TestInstallDarwin_whisperOnly(t *testing.T) {
 	if err := installDarwin(false, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(cmds) != 1 || cmds[0] != "pip3 install openai-whisper" {
-		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
+	if len(cmds) != 1 || cmds[0] != "pip3 install whisper-ctranslate2" {
+		t.Errorf("want [pip3 install whisper-ctranslate2], got %v", cmds)
 	}
 }
 
@@ -268,8 +268,8 @@ func TestInstallLinux_whisperOnly(t *testing.T) {
 	if err := installLinux(false, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(cmds) != 1 || cmds[0] != "pip3 install openai-whisper" {
-		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
+	if len(cmds) != 1 || cmds[0] != "pip3 install whisper-ctranslate2" {
+		t.Errorf("want [pip3 install whisper-ctranslate2], got %v", cmds)
 	}
 }
 
@@ -319,8 +319,8 @@ func TestInstallWindows_whisperOnly(t *testing.T) {
 	if err := installWindows(false, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(cmds) != 1 || cmds[0] != "pip3 install openai-whisper" {
-		t.Errorf("want [pip3 install openai-whisper], got %v", cmds)
+	if len(cmds) != 1 || cmds[0] != "pip3 install whisper-ctranslate2" {
+		t.Errorf("want [pip3 install whisper-ctranslate2], got %v", cmds)
 	}
 }
 
@@ -329,7 +329,7 @@ func TestEnsureDeps_allPresent_noInstall(t *testing.T) {
 	origRun := osRunCmd
 	defer func() { osLookPath = origLook; osRunCmd = origRun }()
 
-	osLookPath = mockLookPath("ffmpeg", "whisper")
+	osLookPath = mockLookPath("ffmpeg", "whisper-ctranslate2")
 	called := false
 	osRunCmd = func(name string, args ...string) error {
 		called = true
@@ -355,5 +355,176 @@ func TestEnsureDeps_unknownOS_returnsError(t *testing.T) {
 	err := ensureDeps()
 	if err == nil || !strings.Contains(err.Error(), "auto-install not supported") {
 		t.Errorf("expected unsupported OS error, got: %v", err)
+	}
+}
+
+func TestEnsureDeps_darwin_ffmpegMissing(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	origGOOS := currentGOOS
+	defer func() { osLookPath = origLook; osRunCmd = origRun; currentGOOS = origGOOS }()
+
+	currentGOOS = "darwin"
+	osLookPath = mockLookPath("whisper-ctranslate2", "brew") // ffmpeg absent
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := ensureDeps(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "brew install ffmpeg" {
+		t.Errorf("want [brew install ffmpeg], got %v", cmds)
+	}
+}
+
+func TestEnsureDeps_linux_whisperMissing(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	origGOOS := currentGOOS
+	defer func() { osLookPath = origLook; osRunCmd = origRun; currentGOOS = origGOOS }()
+
+	currentGOOS = "linux"
+	osLookPath = mockLookPath("ffmpeg", "apt-get", "pip3") // whisper absent
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := ensureDeps(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "pip3 install whisper-ctranslate2" {
+		t.Errorf("want [pip3 install whisper-ctranslate2], got %v", cmds)
+	}
+}
+
+func TestEnsureDeps_windows_bothMissing(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	origGOOS := currentGOOS
+	defer func() { osLookPath = origLook; osRunCmd = origRun; currentGOOS = origGOOS }()
+
+	currentGOOS = "windows"
+	osLookPath = mockLookPath("winget", "pip3") // both tools absent
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := ensureDeps(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"winget install --id Gyan.FFmpeg -e", "pip3 install whisper-ctranslate2"}
+	if strings.Join(cmds, "|") != strings.Join(want, "|") {
+		t.Errorf("want %v, got %v", want, cmds)
+	}
+}
+
+func TestEnsureDeps_errorPropagation(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	origGOOS := currentGOOS
+	defer func() { osLookPath = origLook; osRunCmd = origRun; currentGOOS = origGOOS }()
+
+	currentGOOS = "darwin"
+	osLookPath = mockLookPath("brew") // ffmpeg absent, whisper absent, brew present
+	osRunCmd = func(name string, args ...string) error {
+		return fmt.Errorf("permission denied")
+	}
+
+	err := ensureDeps()
+	if err == nil || !strings.Contains(err.Error(), "permission denied") {
+		t.Errorf("expected install error to propagate, got: %v", err)
+	}
+}
+
+func TestInstallDarwin_bothMissing(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("brew", "pip3")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installDarwin(true, true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"brew install ffmpeg", "pip3 install whisper-ctranslate2"}
+	if strings.Join(cmds, "|") != strings.Join(want, "|") {
+		t.Errorf("want %v, got %v", want, cmds)
+	}
+}
+
+func TestInstallDarwin_ffmpegInstallFails(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("brew")
+	osRunCmd = func(name string, args ...string) error {
+		return fmt.Errorf("network error")
+	}
+
+	err := installDarwin(true, false)
+	if err == nil || !strings.Contains(err.Error(), "could not install ffmpeg") {
+		t.Errorf("expected ffmpeg install error, got: %v", err)
+	}
+}
+
+func TestInstallLinux_bothMissing(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("apt-get", "pip3")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installLinux(true, true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"apt-get install -y ffmpeg", "pip3 install whisper-ctranslate2"}
+	if strings.Join(cmds, "|") != strings.Join(want, "|") {
+		t.Errorf("want %v, got %v", want, cmds)
+	}
+}
+
+func TestInstallWindows_bothMissing(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("winget", "pip3")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installWindows(true, true); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"winget install --id Gyan.FFmpeg -e", "pip3 install whisper-ctranslate2"}
+	if strings.Join(cmds, "|") != strings.Join(want, "|") {
+		t.Errorf("want %v, got %v", want, cmds)
+	}
+}
+
+func TestCmdString(t *testing.T) {
+	got := cmdString("brew", []string{"install", "ffmpeg"})
+	if got != "brew install ffmpeg" {
+		t.Errorf("want %q, got %q", "brew install ffmpeg", got)
 	}
 }

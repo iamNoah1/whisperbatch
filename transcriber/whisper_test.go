@@ -50,12 +50,13 @@ func TestBuildArgs(t *testing.T) {
 	}
 }
 
-// TestTranscribeIntegration runs whisper on a minimal WAV file.
-// It is skipped when whisper is not installed, so CI without whisper still passes.
-// Run locally to catch flag or invocation regressions before cutting a release.
+// TestTranscribeIntegration runs whisper-ctranslate2 on a minimal WAV file.
+// It is skipped when whisper-ctranslate2 is not installed, so CI without it still
+// passes. Run locally to catch flag or invocation regressions before cutting a
+// release.
 func TestTranscribeIntegration(t *testing.T) {
-	if _, err := exec.LookPath("whisper"); err != nil {
-		t.Skip("whisper not in PATH — skipping integration test")
+	if _, err := exec.LookPath("whisper-ctranslate2"); err != nil {
+		t.Skip("whisper-ctranslate2 not in PATH — skipping integration test")
 	}
 
 	dir := t.TempDir()

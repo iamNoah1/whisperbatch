@@ -23,16 +23,17 @@ func TestFindAudioFiles(t *testing.T) {
 	create("e.ogg")
 	create("f.mp4")
 	create("g.webm")
-	create("h.txt") // not audio
-	create("i.pdf") // not audio
-	create("j.MP3") // uppercase — should still match
+	create("h.opus")
+	create("i.txt") // not audio
+	create("j.pdf") // not audio
+	create("k.MP3") // uppercase — should still match
 
 	files, err := FindAudioFiles(dir)
 	if err != nil {
 		t.Fatalf("FindAudioFiles: %v", err)
 	}
 
-	if got, want := len(files), 8; got != want {
+	if got, want := len(files), 9; got != want {
 		t.Errorf("got %d files, want %d", got, want)
 	}
 }

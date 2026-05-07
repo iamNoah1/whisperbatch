@@ -47,8 +47,8 @@ func fallbackInstructions() string {
     Linux:   sudo apt-get install ffmpeg
     Windows: winget install --id Gyan.FFmpeg -e
 
-  openai-whisper:
-    pip3 install openai-whisper`
+  whisper-ctranslate2:
+    pip3 install whisper-ctranslate2`
 }
 
 // cmdString joins name + args into a display string (used in tests and errors).
@@ -64,17 +64,18 @@ func runCmdReal(name string, args ...string) error {
 	return cmd.Run()
 }
 
-// installWhisperViaPip installs openai-whisper using the first available pip.
+// installWhisperViaPip installs whisper-ctranslate2 (the faster-whisper CLI)
+// using the first available pip.
 func installWhisperViaPip() error {
 	pip := findPip()
 	if pip == "" {
 		return fmt.Errorf("no pip found\n%s", fallbackInstructions())
 	}
-	log.Printf("whisper not found — installing openai-whisper via %s", pip)
+	log.Printf("whisper-ctranslate2 not found — installing via %s", pip)
 	parts := strings.Fields(pip)
-	args := append(parts[1:], "install", "openai-whisper")
+	args := append(parts[1:], "install", "whisper-ctranslate2")
 	if err := osRunCmd(parts[0], args...); err != nil {
-		return fmt.Errorf("could not install openai-whisper: %w\n%s", err, fallbackInstructions())
+		return fmt.Errorf("could not install whisper-ctranslate2: %w\n%s", err, fallbackInstructions())
 	}
 	return nil
 }
@@ -137,7 +138,7 @@ func installWindows(ffmpegMissing, whisperMissing bool) error {
 
 func ensureDeps() error {
 	ffmpegMissing := !toolExists("ffmpeg")
-	whisperMissing := !toolExists("whisper")
+	whisperMissing := !toolExists("whisper-ctranslate2")
 
 	if !ffmpegMissing && !whisperMissing {
 		return nil

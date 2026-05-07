@@ -26,8 +26,9 @@ var (
 var rootCmd = &cobra.Command{
 	Use:     "whisperbatch",
 	Version: version,
-	Short:   "Batch transcribe audio files using OpenAI Whisper",
-	Long: `whisperbatch transcribes a folder of audio files in parallel using the Whisper CLI.
+	Short:   "Batch transcribe audio files using faster-whisper",
+	Long: `whisperbatch transcribes a folder of audio files in parallel using the
+faster-whisper CLI (whisper-ctranslate2).
 
 Audio formats supported: mp3, wav, m4a, flac, ogg, mp4, webm
 Output formats supported: txt, json, srt, vtt, tsv
@@ -35,7 +36,7 @@ Output formats supported: txt, json, srt, vtt, tsv
 Example:
   whisperbatch -i ./recordings
   whisperbatch -i ./recordings -o ./output -f txt -f srt -f json
-  whisperbatch -i ./recordings -m large -w 8 --overwrite`,
+  whisperbatch -i ./recordings -m large-v3 -w 8 --overwrite`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		return ensureDeps()
 	},
@@ -53,8 +54,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&inputDir, "input", "i", "", "Folder containing audio files (required)")
 	rootCmd.Flags().StringVarP(&outputDir, "output", "o", "", "Folder for output files (default: same as input)")
 	rootCmd.Flags().StringArrayVarP(&formats, "format", "f", []string{"txt"}, "Output formats: txt, json, srt, vtt, tsv (repeatable)")
-	rootCmd.Flags().IntVarP(&workers, "workers", "w", 1, "Number of parallel transcription workers (default 1; each whisper process already uses all CPUs)")
-	rootCmd.Flags().StringVarP(&model, "model", "m", "", "Override auto-selected Whisper model (tiny/base/medium/large)")
+	rootCmd.Flags().IntVarP(&workers, "workers", "w", 1, "Number of parallel transcription workers (default 1; each whisper-ctranslate2 process already uses all CPUs)")
+	rootCmd.Flags().StringVarP(&model, "model", "m", "", "Override auto-selected model (tiny/base/small/medium/large-v3)")
 	rootCmd.Flags().BoolVar(&overwrite, "overwrite", false, "Overwrite existing output files")
 
 	if err := rootCmd.MarkFlagRequired("input"); err != nil {

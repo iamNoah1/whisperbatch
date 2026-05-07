@@ -27,7 +27,7 @@ func (e *TranscribeError) Error() string {
 
 func (e *TranscribeError) Unwrap() error { return e.Cause }
 
-// buildArgs constructs the argument slice for the whisper CLI invocation.
+// buildArgs constructs the argument slice for the whisper-ctranslate2 invocation.
 func buildArgs(inputPath, outputDir, model string, formats []string) []string {
 	args := []string{
 		inputPath,
@@ -40,13 +40,11 @@ func buildArgs(inputPath, outputDir, model string, formats []string) []string {
 	return args
 }
 
-// Transcribe runs the whisper CLI on a single audio file, writing outputs to
-// outputDir in each of the requested formats.
+// Transcribe runs the whisper-ctranslate2 (faster-whisper) CLI on a single audio
+// file, writing outputs to outputDir in each of the requested formats.
 //
 // It uses a 30-minute per-file timeout and captures stderr for error reporting.
-// Multiple --output_format flags are passed for tools that support it (e.g.
-// faster-whisper). For openai-whisper (which accepts only one format per run),
-// pass a single format or use --format all and prune outputs afterward.
+// Multiple --output_format flags produce multiple files in a single run.
 func Transcribe(inputPath, outputDir, model string, formats []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), whisperTimeout)
 	defer cancel()
@@ -54,7 +52,7 @@ func Transcribe(inputPath, outputDir, model string, formats []string) error {
 	args := buildArgs(inputPath, outputDir, model, formats)
 
 	var stderr bytes.Buffer
-	cmd := exec.CommandContext(ctx, "whisper", args...)
+	cmd := exec.CommandContext(ctx, "whisper-ctranslate2", args...)
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {

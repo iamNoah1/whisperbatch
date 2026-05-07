@@ -16,16 +16,16 @@ RUN CGO_ENABLED=0 go build \
 FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="whisperbatch" \
-      org.opencontainers.image.description="Batch audio transcription via OpenAI Whisper" \
+      org.opencontainers.image.description="Batch audio transcription via faster-whisper" \
       org.opencontainers.image.source="https://github.com/iamNoah1/whisperbatch" \
       org.opencontainers.image.licenses="MIT"
 
-# ffmpeg is required by whisper for audio decoding.
+# ffmpeg is required by whisper-ctranslate2 for audio decoding.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir openai-whisper
+RUN pip install --no-cache-dir whisper-ctranslate2
 
 COPY --from=builder /app/whisperbatch /usr/local/bin/whisperbatch
 

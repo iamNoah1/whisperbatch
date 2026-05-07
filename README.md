@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/iamNoah1/whisperbatch)](go.mod)
 
-A fast, parallel CLI for batch-transcribing audio files with [OpenAI Whisper](https://github.com/openai/whisper).  
+A fast, parallel CLI for batch-transcribing audio files with [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (via the [`whisper-ctranslate2`](https://github.com/Softcatala/whisper-ctranslate2) CLI).  
 Drop a folder of recordings in — get transcripts out. Automatically selects the best model for your hardware.
 
 ```
@@ -29,7 +29,7 @@ Drop a folder of recordings in — get transcripts out. Automatically selects th
 
 ## Features
 
-- **Parallel processing** — configurable worker pool, defaults to 1 (each Whisper process already saturates all CPUs)
+- **Parallel processing** — configurable worker pool, defaults to 1 (each whisper-ctranslate2 process already saturates all CPUs)
 - **Auto model selection** — queries `nvidia-smi` for VRAM, falls back to RAM
 - **Multiple output formats** — `txt`, `srt`, `vtt`, `json`, `tsv` in one pass
 - **Safe by default** — never overwrites existing transcripts unless `--overwrite`
@@ -43,8 +43,8 @@ Drop a folder of recordings in — get transcripts out. Automatically selects th
 | Requirement | Notes |
 |-------------|-------|
 | Go 1.22+ | Only needed for `go install` / building from source |
-| Python 3.9+ | For the `whisper` CLI — installed automatically if missing |
-| `whisper` on `$PATH` | Installed automatically on first run |
+| Python 3.9+ | For the `whisper-ctranslate2` CLI — installed automatically if missing |
+| `whisper-ctranslate2` on `$PATH` | Installed automatically on first run |
 | `ffmpeg` on `$PATH` | Installed automatically on first run |
 
 `whisperbatch` installs missing dependencies automatically on first run using
@@ -73,7 +73,7 @@ curl -L https://github.com/iamNoah1/whisperbatch/releases/latest/download/whispe
 ### Docker
 
 ```bash
-# Pull the image (includes Python, ffmpeg, and openai-whisper)
+# Pull the image (includes Python, ffmpeg, and whisper-ctranslate2)
 docker pull ghcr.io/iamnoah1/whisperbatch:latest
 
 # Transcribe a folder
@@ -104,7 +104,7 @@ whisperbatch -i ./recordings
 whisperbatch -i ./recordings -o ./output -f txt -f srt -f json
 
 # Force a specific model, 8 workers, overwrite existing transcripts
-whisperbatch -i ./recordings -m large -w 8 --overwrite
+whisperbatch -i ./recordings -m large-v3 -w 8 --overwrite
 
 # Check version
 whisperbatch --version
@@ -120,7 +120,7 @@ whisperbatch --version
 | `--output` | `-o` | string | same as input | Folder for output files |
 | `--format` | `-f` | `[]string` | `txt` | Output format — repeatable: `txt json srt vtt tsv` |
 | `--workers` | `-w` | int | `1` | Parallel transcription workers |
-| `--model` | `-m` | string | auto | Whisper model override: `tiny base medium large` |
+| `--model` | `-m` | string | auto | Model override: `tiny base small medium large-v3` (any name accepted by `whisper-ctranslate2`) |
 | `--overwrite` | | bool | `false` | Overwrite existing output files |
 | `--version` | | | | Print version and exit |
 
@@ -128,27 +128,30 @@ whisperbatch --version
 
 ## Auto Model Selection
 
-When `--model` is not set, `whisperbatch` picks the best model for your hardware:
+When `--model` is not set, `whisperbatch` picks the best model for your hardware.
+Thresholds are tuned for faster-whisper, which uses roughly one-third the memory
+of openai-whisper for the same model size:
 
 | Resource available | Model |
 |--------------------|-------|
-| VRAM ≥ 10 GB **or** RAM ≥ 16 GB | `large` |
-| VRAM ≥ 5 GB **or** RAM ≥ 8 GB | `medium` |
-| VRAM ≥ 2 GB **or** RAM ≥ 4 GB | `base` |
+| VRAM ≥ 6 GB **or** RAM ≥ 8 GB | `large-v3` |
+| VRAM ≥ 3 GB **or** RAM ≥ 4 GB | `medium` |
+| VRAM ≥ 2 GB **or** RAM ≥ 2 GB | `small` |
+| VRAM ≥ 1 GB **or** RAM ≥ 1 GB | `base` |
 | Less than the above | `tiny` |
 
 GPU VRAM is detected via `nvidia-smi`. If that fails (no GPU or no driver),
 available system RAM is used instead. The selection is logged at startup:
 
 ```
-2025/01/15 10:23:01 model: medium (VRAM 6144 MB >= 5 GB)
+2026/01/15 10:23:01 model: medium (VRAM 4096 MB >= 3 GB)
 ```
 
 ---
 
 ## Supported Audio Formats
 
-`.mp3` `.wav` `.m4a` `.flac` `.ogg` `.mp4` `.webm`
+`.mp3` `.wav` `.m4a` `.flac` `.ogg` `.opus` `.mp4` `.webm`
 
 Files are discovered **recursively** from the input folder.
 
@@ -171,12 +174,12 @@ that file is skipped with a log message.
 
 ## GPU (CUDA) Docker Image
 
-The default Docker image uses CPU-only Whisper. For GPU acceleration, build with a CUDA base:
+The default Docker image uses CPU-only inference. For GPU acceleration, build with a CUDA base:
 
 ```dockerfile
 FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04
 RUN apt-get update && apt-get install -y python3 python3-pip ffmpeg
-RUN pip3 install openai-whisper
+RUN pip3 install whisper-ctranslate2
 COPY whisperbatch /usr/local/bin/whisperbatch
 ENTRYPOINT ["whisperbatch"]
 ```
@@ -228,7 +231,7 @@ whisperbatch/
 ├── cmd/root.go               Cobra command & flag definitions
 ├── transcriber/
 │   ├── transcriber.go        Worker pool orchestration
-│   ├── whisper.go            Subprocess call to whisper CLI
+│   ├── whisper.go            Subprocess call to whisper-ctranslate2
 │   └── model.go              Auto model selection (VRAM / RAM)
 ├── fileutil/fileutil.go      Audio file discovery, output path helpers
 ├── Dockerfile                Self-contained image (Go build + runtime)

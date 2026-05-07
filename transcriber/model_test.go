@@ -7,11 +7,14 @@ func TestSelectModel_VRAM(t *testing.T) {
 		vramMB float64
 		want   string
 	}{
-		{10*1024 + 1, "large"},
-		{10 * 1024, "large"},
-		{5 * 1024, "medium"},
-		{2 * 1024, "base"},
-		{1 * 1024, "tiny"}, // VRAM too small, falls through to RAM; 1 GB RAM → tiny
+		{6*1024 + 1, "large-v3"},
+		{6 * 1024, "large-v3"},
+		{3 * 1024, "medium"},
+		{2 * 1024, "small"},
+		{1 * 1024, "base"},
+		// Below 1 GB VRAM: falls through to the RAM check; with RAM=0 we land in
+		// the < 1 GB tier → tiny.
+		{512, "tiny"},
 	}
 	for _, tc := range cases {
 		// RAM set to 0 so only VRAM path (or tiny fallback) is exercised.
@@ -27,11 +30,12 @@ func TestSelectModel_RAM(t *testing.T) {
 		ramMB float64
 		want  string
 	}{
-		{16*1024 + 1, "large"},
-		{16 * 1024, "large"},
-		{8 * 1024, "medium"},
-		{4 * 1024, "base"},
-		{2 * 1024, "tiny"},
+		{8*1024 + 1, "large-v3"},
+		{8 * 1024, "large-v3"},
+		{4 * 1024, "medium"},
+		{2 * 1024, "small"},
+		{1 * 1024, "base"},
+		{512, "tiny"},
 		{0, "tiny"},
 	}
 	for _, tc := range cases {
