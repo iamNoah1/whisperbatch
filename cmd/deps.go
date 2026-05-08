@@ -80,6 +80,26 @@ func installWhisperViaPip() error {
 	return nil
 }
 
+// installWhisperViaPipx installs whisper-ctranslate2 via pipx, which is the
+// correct approach on macOS where Homebrew's Python is externally managed
+// (PEP 668) and rejects plain pip3 installs.
+func installWhisperViaPipx() error {
+	if !toolExists("pipx") {
+		if !toolExists("brew") {
+			return fmt.Errorf("pipx not found and brew not available\n%s", fallbackInstructions())
+		}
+		log.Printf("pipx not found — installing via Homebrew")
+		if err := osRunCmd("brew", "install", "pipx"); err != nil {
+			return fmt.Errorf("could not install pipx: %w\n%s", err, fallbackInstructions())
+		}
+	}
+	log.Printf("whisper-ctranslate2 not found — installing via pipx")
+	if err := osRunCmd("pipx", "install", "whisper-ctranslate2"); err != nil {
+		return fmt.Errorf("could not install whisper-ctranslate2: %w\n%s", err, fallbackInstructions())
+	}
+	return nil
+}
+
 func installDarwin(ffmpegMissing, whisperMissing bool) error {
 	if ffmpegMissing {
 		if !toolExists("brew") {
@@ -95,7 +115,7 @@ func installDarwin(ffmpegMissing, whisperMissing bool) error {
 		}
 	}
 	if whisperMissing {
-		return installWhisperViaPip()
+		return installWhisperViaPipx()
 	}
 	return nil
 }

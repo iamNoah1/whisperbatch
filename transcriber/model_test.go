@@ -25,6 +25,28 @@ func TestSelectModel_VRAM(t *testing.T) {
 	}
 }
 
+// TestSelectModel_VRAM_fallthrough verifies that when VRAM is present but below
+// 1 GB, the RAM tier is used rather than defaulting to tiny unconditionally.
+func TestSelectModel_VRAM_fallthrough(t *testing.T) {
+	cases := []struct {
+		vramMB float64
+		ramMB  float64
+		want   string
+	}{
+		{512, 8 * 1024, "large-v3"}, // small GPU, lots of RAM
+		{512, 4 * 1024, "medium"},
+		{512, 2 * 1024, "small"},
+		{512, 1 * 1024, "base"},
+		{512, 0, "tiny"},
+	}
+	for _, tc := range cases {
+		name, _ := selectModel(tc.ramMB, tc.vramMB)
+		if name != tc.want {
+			t.Errorf("selectModel(ram=%.0f, vram=%.0f) = %q, want %q", tc.ramMB, tc.vramMB, name, tc.want)
+		}
+	}
+}
+
 func TestSelectModel_RAM(t *testing.T) {
 	cases := []struct {
 		ramMB float64

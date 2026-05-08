@@ -125,6 +125,22 @@ func TestInstallWhisperViaPip_python3Fallback(t *testing.T) {
 	}
 }
 
+func TestInstallWhisperViaPip_pipFails(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("pip3")
+	osRunCmd = func(name string, args ...string) error {
+		return fmt.Errorf("network timeout")
+	}
+
+	err := installWhisperViaPip()
+	if err == nil || !strings.Contains(err.Error(), "could not install whisper-ctranslate2") {
+		t.Errorf("expected install error, got: %v", err)
+	}
+}
+
 func TestInstallWhisperViaPip_noPip(t *testing.T) {
 	orig := osLookPath
 	defer func() { osLookPath = orig }()
@@ -187,7 +203,7 @@ func TestInstallDarwin_whisperOnly(t *testing.T) {
 	origRun := osRunCmd
 	defer func() { osLookPath = origLook; osRunCmd = origRun }()
 
-	osLookPath = mockLookPath("pip3")
+	osLookPath = mockLookPath("pipx")
 	var cmds []string
 	osRunCmd = func(name string, args ...string) error {
 		cmds = append(cmds, cmdString(name, args))
@@ -197,8 +213,76 @@ func TestInstallDarwin_whisperOnly(t *testing.T) {
 	if err := installDarwin(false, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(cmds) != 1 || cmds[0] != "pip3 install whisper-ctranslate2" {
-		t.Errorf("want [pip3 install whisper-ctranslate2], got %v", cmds)
+	if len(cmds) != 1 || cmds[0] != "pipx install whisper-ctranslate2" {
+		t.Errorf("want [pipx install whisper-ctranslate2], got %v", cmds)
+	}
+}
+
+func TestInstallWhisperViaPipx_pipxPresent(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("pipx")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installWhisperViaPipx(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(cmds) != 1 || cmds[0] != "pipx install whisper-ctranslate2" {
+		t.Errorf("want [pipx install whisper-ctranslate2], got %v", cmds)
+	}
+}
+
+func TestInstallWhisperViaPipx_pipxMissingBrewPresent(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("brew")
+	var cmds []string
+	osRunCmd = func(name string, args ...string) error {
+		cmds = append(cmds, cmdString(name, args))
+		return nil
+	}
+
+	if err := installWhisperViaPipx(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"brew install pipx", "pipx install whisper-ctranslate2"}
+	if strings.Join(cmds, "|") != strings.Join(want, "|") {
+		t.Errorf("want %v, got %v", want, cmds)
+	}
+}
+
+func TestInstallWhisperViaPipx_pipxMissingBrewMissing(t *testing.T) {
+	orig := osLookPath
+	defer func() { osLookPath = orig }()
+	osLookPath = mockLookPath()
+
+	err := installWhisperViaPipx()
+	if err == nil || !strings.Contains(err.Error(), "pipx not found and brew not available") {
+		t.Errorf("expected pipx/brew missing error, got: %v", err)
+	}
+}
+
+func TestInstallWhisperViaPipx_installFails(t *testing.T) {
+	origLook := osLookPath
+	origRun := osRunCmd
+	defer func() { osLookPath = origLook; osRunCmd = origRun }()
+
+	osLookPath = mockLookPath("pipx")
+	osRunCmd = func(name string, args ...string) error {
+		return fmt.Errorf("network timeout")
+	}
+
+	err := installWhisperViaPipx()
+	if err == nil || !strings.Contains(err.Error(), "could not install whisper-ctranslate2") {
+		t.Errorf("expected install error, got: %v", err)
 	}
 }
 
@@ -448,7 +532,7 @@ func TestInstallDarwin_bothMissing(t *testing.T) {
 	origRun := osRunCmd
 	defer func() { osLookPath = origLook; osRunCmd = origRun }()
 
-	osLookPath = mockLookPath("brew", "pip3")
+	osLookPath = mockLookPath("brew", "pipx")
 	var cmds []string
 	osRunCmd = func(name string, args ...string) error {
 		cmds = append(cmds, cmdString(name, args))
@@ -458,7 +542,7 @@ func TestInstallDarwin_bothMissing(t *testing.T) {
 	if err := installDarwin(true, true); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := []string{"brew install ffmpeg", "pip3 install whisper-ctranslate2"}
+	want := []string{"brew install ffmpeg", "pipx install whisper-ctranslate2"}
 	if strings.Join(cmds, "|") != strings.Join(want, "|") {
 		t.Errorf("want %v, got %v", want, cmds)
 	}

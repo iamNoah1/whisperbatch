@@ -50,6 +50,27 @@ Drop a folder of recordings in — get transcripts out. Automatically selects th
 `whisperbatch` installs missing dependencies automatically on first run using
 Homebrew (macOS), apt (Linux), or winget (Windows). No manual setup needed.
 
+### Known warnings
+
+These warnings come from inside the `whisper-ctranslate2` subprocess and are
+harmless — transcription output is not affected.
+
+**Hugging Face unauthenticated requests** (first run / model download):
+```
+Warning: You are sending unauthenticated requests to the HF Hub.
+Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+```
+To silence it, set a free read-only token from [huggingface.co](https://huggingface.co) → Settings → Access Tokens:
+```bash
+export HF_TOKEN=hf_...   # add to ~/.zshrc / ~/.bashrc to make it permanent
+```
+
+**Leaked semaphore on shutdown** (Python 3.12+, known upstream CTranslate2 issue):
+```
+UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+```
+This is a [known bug](https://github.com/OpenNMT/CTranslate2/issues) in CTranslate2's cleanup path. No action needed.
+
 ---
 
 ## Installation
